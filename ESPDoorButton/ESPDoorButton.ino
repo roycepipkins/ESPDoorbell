@@ -83,7 +83,7 @@ void loop() {
 
   MQTT_connect();
 
-  bool doorbell_switch = digitalRead(0);
+  bool doorbell_switch = !digitalRead(0);
   
   if (doorbell_switch && !doorbell_detected)
   {
