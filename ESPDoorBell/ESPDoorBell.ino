@@ -16,9 +16,7 @@ const char Doorbell_Topic[] PROGMEM = "DoorBell";
 
 WiFiClient client;
 Adafruit_MQTT_Client mqtt(&client, Mqtt_Server, MQTT_SERVERPORT, Mqtt_Username, Mqtt_Password);
-Adafruit_MQTT_Publish DoorBell = Adafruit_MQTT_Publish(&mqtt, Doorbell_Topic);
-
-
+Adafruit_MQTT_Subscribe DoorBell = Adafruit_MQTT_Subscribe(&mqtt, Doorbell_Topic);
 
 
 
@@ -41,7 +39,10 @@ void setup() {
   }
   Serial.println();
 
-  pinMode(0, INPUT);
+  pinMode(0, OUTPUT);
+
+  mqtt.subscribe(&DoorBell);
+  
 }
 
 
@@ -73,35 +74,27 @@ void MQTT_connect() {
 }
 
 
+
 void loop() {
-
-  static int doorbell_detected = 0;
-  static unsigned long last_detect = 0;
-  unsigned long current_time = millis();
-
-  if (!last_detect) last_detect = current_time;
-
   MQTT_connect();
 
-  bool doorbell_switch = digitalRead(0);
-  
-  if (doorbell_switch && !doorbell_detected)
-  {
-    if (current_time - last_detect > 100)
-    {
-      doorbell_detected = 1;
-      //TODO publish
-      DoorBell.publish("ding");
-      Serial.println("ding");
-    }
-  }
+  Adafruit_MQTT_Subscribe *subscription;
 
-  if (!doorbell_switch && doorbell_detected)
-  {
-    doorbell_detected = 0;
-    DoorBell.publish("dong");
-    Serial.println("dong");
-    last_detect = 0;
+  while (subscription = mqtt.readSubscription(1000)) {
+
+    // we only care about the lamp events
+    if (subscription == &DoorBell) {
+
+      // convert mqtt ascii payload to int
+      char *msg = (char *)DoorBell.lastread;
+      if (msg[0])
+      {
+        if (msg[1] == 'i')
+          digitalWrite(0, HIGH);
+        else
+          digitalWrite(0, LOW);
+      }
+    }
   }
 }
 
