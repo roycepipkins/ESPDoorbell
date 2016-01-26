@@ -77,11 +77,18 @@ void loop() {
 
   static int doorbell_detected = 0;
   static unsigned long last_detect = 0;
+  static unsigned long last_ping = 0;
   unsigned long current_time = millis();
 
   if (!last_detect) last_detect = current_time;
 
   MQTT_connect();
+
+  if (current_time < last_ping || current_time - last_ping > 30000)
+  {
+    mqtt.ping();
+    last_ping = current_time;
+  }
 
   bool doorbell_switch = !digitalRead(0);
   

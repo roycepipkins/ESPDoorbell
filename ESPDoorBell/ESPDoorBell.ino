@@ -76,7 +76,16 @@ void MQTT_connect() {
 
 
 void loop() {
+  static unsigned long last_ping = 0;
+  unsigned long current_time = millis();
+  
   MQTT_connect();
+
+  if (current_time < last_ping || current_time - last_ping > 30000)
+  {
+    mqtt.ping();
+    last_ping = current_time;
+  }
 
   Adafruit_MQTT_Subscribe *subscription;
 
